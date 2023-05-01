@@ -33,16 +33,16 @@ python main.py --gpus 0 --train --wo_shifter    # train wo.Shifter model
 
 ### Inference
 
-You can synthesize binaural audio by running `inference.py`. Specify the directory path where the mono `.wav` files and position `.txt` files for each are located.
+You can synthesize binaural audio by running `inference.py`. Specify the directory path where the mono `.wav` files and position `.txt` files for each are located. We release the pre-trained NFS model described in the paper [here](https://github.com/jin-woo-lee/nfs-binaural/releases/tag/v1.0.0).
 
 ```bash
 python inference.py --gpu 0 --ckpt path/to/ckpt/file.pt --root_dir path/to/load/dir --save_dir path/to/save/dir
-python inference.py --gpu 0 --ckpt results/nfs-00000000-000000/train/ckpt/0/nfs_1353.pt --root_dir dataset/benchmark/testset  --save_dir ./benchmark_eval --is_eval_set
+python inference.py --gpu 0 --ckpt path/to/ckpt/file.pt --root_dir dataset/benchmark/testset  --save_dir ./benchmark_eval --is_eval_set
 ```
 
 ### Citation
 
-Please cite this work as
+This will be updated after publication in proceedings of ICASSP 2023.
 
 ```bib
 @article{lee2022neural,
@@ -52,5 +52,4 @@ Please cite this work as
   year={2022}
 }
 ```
-This will be updated after publication in proceedings of ICASSP 2023.
 
