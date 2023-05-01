@@ -127,12 +127,6 @@ def main():
     if args.result_dir is None:
         args.result_dir = exp_name if not args.debug else 'debug'
 
-    formatter = logging.Formatter(
-        '%(asctime)s [%(levelname)s] %(message)s (%(filename)s:%(lineno)s)')
-    stream_handler = logging.StreamHandler()
-    stream_handler.setLevel("INFO")
-    stream_handler.setFormatter(formatter)
-
     if args.train:
         # Copy directory sturcture and files
         exclude_dir  = ['results', '__pycache__', 'log', 'wandb']

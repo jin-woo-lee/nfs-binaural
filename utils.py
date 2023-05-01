@@ -455,58 +455,11 @@ def codec_aug(wav_list, sr):
     return wav_list, cdc
 
 
-def filter_conv_dict(dicts):
+def filter_dict(dicts):
     filtered_dicts = {}
     for key in dicts.keys():
-        new_key = key
-
-        if 'feature_extractor' in key:
-            if len(key.split('.')) == 5:
-                "feature_extractor.conv_layers.0.0.weight",
-                _, conv_layers, i, _, wb = key.split('.')
-                new_key = '.'.join([conv_layers, i, 'conv', wb])
-            else:
-                "feature_extractor.conv_layers.0.2.1.weight",
-                _, conv_layers, i, _, _, wb = key.split('.')
-                new_key = '.'.join([conv_layers, i, 'norm', wb])
-            filtered_dicts[new_key] = dicts[key]
-
-    return filtered_dicts
-
-
-def filter_dict(dicts, selective=False):
-    filtered_dicts = {}
-    for key in dicts.keys():
-        new_key = key
-        if selective and ('post_extract_proj' in key):
-            continue
-
-        if 'feature_extractor' in key:
-            if len(key.split('.')) == 5:
-                "feature_extractor.conv_layers.0.0.weight",
-                feature_extractor, conv_layers, i, _, wb = key.split('.')
-                new_key = '.'.join([feature_extractor, conv_layers, i, 'conv', wb])
-            else:
-                if selective:
-                    continue
-                "feature_extractor.conv_layers.0.2.1.weight",
-                feature_extractor, conv_layers, i, _, _, wb = key.split('.')
-                new_key = '.'.join([feature_extractor, conv_layers, i, 'norm', wb])
-        elif 'encoder' in key:
-            if 'pos_conv' in key:
-                "encoder.pos_conv.0.bias"
-                encoder, pos_conv, i, wb = key.split('.')
-                new_key = '.'.join([encoder, pos_conv, 'conv', wb])
+        new_key = key.split('module.')[-1] if 'module' in key else key
         filtered_dicts[new_key] = dicts[key]
-
-    del filtered_dicts["mask_emb"]
-    del filtered_dicts["quantizer.vars"]
-    del filtered_dicts["quantizer.weight_proj.weight"]
-    del filtered_dicts["quantizer.weight_proj.bias"]
-    del filtered_dicts["project_q.weight"]
-    del filtered_dicts["project_q.bias"]
-    del filtered_dicts["final_proj.weight"]
-    del filtered_dicts["final_proj.bias"]
     return filtered_dicts
 
 

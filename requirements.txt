@@ -1,0 +1,16 @@
+pysoundfile
+librosa
+
+torch==1.12.1+cu116
+torchaudio==0.12.1
+--find-links https://download.pytorch.org/whl/cu116/torch_stable.html
+
+matplotlib
+einops
+torchmetrics
+pesq
+auraloss
+numpy
+scipy
+tqdm
+

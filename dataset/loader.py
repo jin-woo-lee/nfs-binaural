@@ -46,7 +46,7 @@ class GenericDataset(torch.utils.data.Dataset):
         self.sr = 48000
 
         self.mode = mode
-        root_dir = '/data2/binaural_dataset/binaural_dataset'
+        root_dir = 'dataset/benchmark'
         subset_dir = os.path.join(root_dir, 'trainset' if mode=='train' else 'testset')
 
         if mode == 'valid':

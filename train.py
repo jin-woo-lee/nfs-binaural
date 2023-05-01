@@ -5,7 +5,6 @@ from solver import Solver
 import torch.multiprocessing as mp
 import torch.distributed as dist
 import logging
-import wandb
 import numpy as np
 import random
 

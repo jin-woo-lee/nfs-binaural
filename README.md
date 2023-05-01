@@ -3,36 +3,40 @@
 
 ### Prepare dataset
 
+Download the [binaural speech dataset](https://github.com/facebookresearch/BinauralSpeechSynthesis/releases/tag/v1.0) and unzip it. See [WarpNet repo](https://github.com/facebookresearch/BinauralSpeechSynthesis#dataset) for more details about the data. When unzipped, create a symbolinc link to the directory that contains 'testset' and 'trainset' subdirectories as follows.
+
 ```bash
-python3 dataset/collect_ood_data.py
-ln -s /path/to/data/directory dataset/benchmark
-ln -s /path/to/data/directory dataset/ood
+ls /path/to/binaural_dataset
+#  testset  trainset
+ln -s /path/to/binaural_dataset dataset/benchmark
 ```
 
 ### Training
 
-training code. assume data directory is in ///
+Install third-party dependencies. This project was built and tested on RTX 2080 with CUDA 11.2.
 
 ```bash
-python3 main.py --gpus 0 --train                 # train NFS
-python3 main.py --gpus 0 --train --wo_ni         # train wo.NI model
-python3 main.py --gpus 0 --train --wo_lff        # train wo.LFF model
-python3 main.py --gpus 0 --train --wo_geowarp    # train wo.GeoWarp model
-python3 main.py --gpus 0 --train --wo_shifter    # train wo.Shifter model
+pip install -r requirements.txt
 ```
 
-### Ablation test
+
+### Training
+
+To train NFS, run `main.py` with `--train` argument. You can also run several variants of NFS that appears in the ablation study by passing additional arguments as follows:
 
 ```bash
-python3 main.py --gpus 0 --test --result_dir ... --load_epoch 16 --load_step 1353             
-python3 main.py --gpus 0 --test --result_dir ... --load_epoch 16 --load_step 1353 --wo_ni     
-python3 main.py --gpus 0 --test --result_dir ... --load_epoch 16 --load_step 1353 --wo_lff    
-python3 main.py --gpus 0 --test --result_dir ... --load_epoch 16 --load_step 1353 --wo_geowarp
-python3 main.py --gpus 0 --test --result_dir ... --load_epoch 16 --load_step 1353 --wo_shifter
+python main.py --gpus 0 --train                 # train NFS
+python main.py --gpus 0 --train --wo_ni         # train wo.NI model
+python main.py --gpus 0 --train --wo_lff        # train wo.LFF model
+python main.py --gpus 0 --train --wo_geowarp    # train wo.GeoWarp model
+python main.py --gpus 0 --train --wo_shifter    # train wo.Shifter model
 ```
 
 ### Inference
 
+You can synthesize binaural audio by running `inference.py`. Specify the directory path where the mono `.wav` files and position `.txt` files for each are located.
+
 ```bash
-python3 inference.py --gpu 0 --ckpt path/to/ckpt/file.pt
+python inference.py --gpu 0 --ckpt path/to/ckpt/file.pt --root_dir path/to/load/dir --save_dir path/to/save/dir
+python inference.py --gpu 0 --ckpt results/nfs-00000000-000000/train/ckpt/0/nfs_1353.pt --root_dir dataset/benchmark/testset  --save_dir ./check --is_eval_set
 ```

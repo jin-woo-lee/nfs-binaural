@@ -10,7 +10,6 @@ import librosa.display
 import matplotlib.pyplot as plt
 import torch
 import torch.nn as nn
-from torchaudio import datasets
 from torch.utils.data import DataLoader
 from torch.nn.parallel import DistributedDataParallel
 from torch.utils.data.distributed import DistributedSampler
@@ -20,7 +19,6 @@ import torch.optim as optim
 import torchaudio.functional as TAF
 import torchaudio.transforms as TAT
 from tqdm import tqdm
-import wandb
 from evaluate import compute_metrics
 from auraloss.freq import MultiResolutionSTFTLoss as MRSTFT
 from torchmetrics.audio.pesq import PerceptualEvaluationSpeechQuality as PESQ
@@ -242,34 +240,6 @@ class Solver(object):
                 self.optim.step()
 
                 if args.gpu==0:
-                    if i % args.plot_iter == 0:
-                        dry_mag = dry_mag.detach().cpu().numpy()
-                        wet_mag = wet_mag.detach().cpu().numpy()
-                        est_mag = est_mag.detach().cpu().numpy()
-                        dry_mel = dry_mel.detach().cpu().numpy()
-                        wet_mel = wet_mel.detach().cpu().numpy()
-                        est_mel = est_mel.detach().cpu().numpy()
-                        dry_np = dry.detach().cpu().numpy()
-                        wet_np = wet.detach().cpu().numpy()
-                        est_np = est.detach().cpu().numpy()
-                        enc_np = enc.detach().cpu().numpy()
-                        wet_ild = wet_ild.detach().cpu().numpy()
-                        est_ild = est_ild.detach().cpu().numpy()
-
-                        plot_dir = f"{root_dir}/plot/{epoch}"
-                        os.makedirs(plot_dir, exist_ok=True)
-                        plot_b = np.random.randint(dry_np.shape[0])
-                        plots, wavs = save_samples(
-                            [[dry_mag, wet_mag, est_mag],
-                             [dry_mel, wet_mel, est_mel],
-                             [dry_np, wet_np, est_np],
-                             [wet_ild, est_ild, enc_np],
-                            ],
-                            plot_dir, i,
-                            self.sr,
-                            b = plot_b,
-                        )
-    
                     if i % 10 == 0:
                         tot = loss
                         scr = compute_metrics(est, wet)
@@ -383,33 +353,6 @@ class Solver(object):
             WBPESQ_EVAL.append(wbpesq_loss.item() * batch_size)
             num_samples += batch_size
 
-            if args.gpu==0 and not args.dont_plot:
-                dry_mag = dry_mag.detach().cpu().numpy()
-                wet_mag = wet_mag.detach().cpu().numpy()
-                est_mag = est_mag.detach().cpu().numpy()
-                dry_mel = dry_mel.detach().cpu().numpy()
-                wet_mel = wet_mel.detach().cpu().numpy()
-                est_mel = est_mel.detach().cpu().numpy()
-                dry = dry.detach().cpu().numpy()
-                wet = wet.detach().cpu().numpy()
-                est = est.detach().cpu().numpy()
-                enc = enc.detach().cpu().numpy()
-                wet_ild = wet_ild.detach().cpu().numpy()
-                est_ild = est_ild.detach().cpu().numpy()
-
-                plot_dir = f"{root_dir}/plot/{self.epoch}"
-                os.makedirs(plot_dir, exist_ok=True)
-                plot_b = np.random.randint(dry.shape[0])
-                plots, wavs = save_samples(
-                    [[dry_mag, wet_mag, est_mag],
-                     [dry_mel, wet_mel, est_mel],
-                     [dry, wet, est],
-                     [wet_ild, est_ild, enc],
-                    ],
-                    plot_dir, i,
-                    self.sr,
-                    b = plot_b,
-                )
             # end of test iter
         tot_loss = sum(TOT_LOSS) / num_samples
         wet_mag_loss = sum(WET_MAG_LOSS) / num_samples
