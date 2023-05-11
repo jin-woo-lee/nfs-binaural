@@ -42,14 +42,16 @@ python inference.py --gpu 0 --ckpt path/to/ckpt/file.pt --root_dir dataset/bench
 
 ### Citation
 
-This will be updated after publication in proceedings of ICASSP 2023.
+If you find our work helpful, please cite it as below.
 
 ```bib
-@article{lee2022neural,
-  title={Neural Fourier Shift for Binaural Speech Rendering},
+@inproceedings{lee2023neural,
+  title={Neural fourier shift for binaural speech rendering},
   author={Lee, Jin Woo and Lee, Kyogu},
-  journal={arXiv preprint arXiv:2211.00878},
-  year={2022}
+  booktitle={ICASSP 2023-2023 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP)},
+  pages={1--5},
+  year={2023},
+  organization={IEEE}
 }
 ```
 
