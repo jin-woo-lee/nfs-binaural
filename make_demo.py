@@ -13,6 +13,10 @@ import matplotlib.pyplot as plt
 from dataset.loader import load_txt
 from utils import unfold, filter_dict
 from networks.nfs import get_inverse_window
+import shutil
+import subprocess
+import matplotlib
+matplotlib.use("agg")
 
 def unfold_batch(x, window, n_ch=1):
     taps = window.size(-1)
@@ -95,18 +99,117 @@ def inference(args, nfs):
         p_taps = int(taps / 48000 * 120)
         z = unfold_batch(x, a_window)
         p = unfold_batch(p, torch.ones_like(a_window.narrow(-1,0,p_taps)), n_ch=7)
-        o = []
+        o = []; lir, rir, lmg, rmg = [], [], [], []
         dur = []
+        sr = nfs.lfs.sr; omega = nfs.lfs.omega
         for b in range(z.size(0)):
             with torch.no_grad():
-                o.append(nfs(p.narrow(0,b,1), z.narrow(0,b,1))[0])
+                out, _, lm, la = nfs(p.narrow(0,b,1), z.narrow(0,b,1))
+                lmag, rmag = lm
+                lang, rang = la
+                lomg = sr * lang * omega / 1000
+                romg = sr * rang * omega / 1000
+
+                lz = torch.fft.irfft((lmag * torch.exp(1j * lomg)).sum(1), nfs.lfs.taps)
+                rz = torch.fft.irfft((rmag * torch.exp(1j * romg)).sum(1), nfs.rfs.taps)
+                lz = lz.narrow(0,0,lz.size(0)-1)
+                rz = rz.narrow(0,0,rz.size(0)-1)
+
+                o.append(out)
+                lir.append(lz.cpu()); rir.append(rz.cpu())
         y = torch.cat(o, dim=0)
-        y = fold_batch(y, s_window)
-        y = y.cpu().numpy()
+        y = fold_batch(y, s_window).cpu().numpy()
+
+        lir = torch.cat(lir, dim=0)
+        rir = torch.cat(rir, dim=0)
+        lmg = 20 * (torch.fft.rfft(lir).abs() + 1e-12).log10().numpy()
+        rmg = 20 * (torch.fft.rfft(rir).abs() + 1e-12).log10().numpy()
+        ldy = (torch.argmax(lir.abs(), dim=-1) / sr * 1000).numpy()
+        rdy = (torch.argmax(rir.abs(), dim=-1) / sr * 1000).numpy()
+        lir = lir.numpy()
+        rir = rir.numpy()
+
+        fax = np.linspace(0, sr // 2, lmg.shape[-1]) / 1000
 
         data_dir = os.path.join(save_dir, subset)
         os.makedirs(data_dir, exist_ok=True)
         sf.write(f'{data_dir}/{fname}.wav', y, samplerate=48000, subtype="PCM_16")
+
+        freq_ticks = [0,2,4,8,16]
+        for j in range(lir.shape[0]):
+            f, ax = plt.subplots(figsize=(5,7), nrows=3, ncols=2)
+            ax[0,0].set_title("Left Ear"); ax[0,1].set_title("Right Ear")
+
+            # Impulse Response
+            ax[0,0].set_ylabel("Impulse Response")
+            ax[0,0].plot(lir[j], c='k', lw=0.5)
+            ax[0,1].plot(rir[j], c='k', lw=0.5)
+            ax[0,0].axhline(y=0, c='k', lw=0.3)
+            ax[0,1].axhline(y=0, c='k', lw=0.3)
+            ax[0,0].set_ylim((-1,1))
+            ax[0,1].set_ylim((-1,1))
+            ax[0,0].set_xticks([])
+            ax[0,1].set_xticks([])
+            ax[0,0].set_yticks([])
+            ax[0,1].set_yticks([])
+
+            # Magnitude Response
+            ax[1,0].set_ylabel("Magnitude Response (dB)")
+            ax[1,0].plot(fax, lmg[j], c='k', lw=0.5)
+            ax[1,1].plot(fax, rmg[j], c='k', lw=0.5)
+            ax[1,0].axhline(y=0, c='k', lw=0.3)
+            ax[1,1].axhline(y=0, c='k', lw=0.3)
+            for ft in freq_ticks:
+                ax[1,0].axvline(x=ft, c='k', lw=0.3)
+                ax[1,1].axvline(x=ft, c='k', lw=0.3)
+            ax[1,0].set_ylim((-60,30))
+            ax[1,1].set_ylim((-60,30))
+            ax[1,0].set_xticks([])
+            ax[1,1].set_xticks([])
+            ax[1,0].set_yticks([])
+            ax[1,1].set_yticks([])
+
+            # Delay
+            ax[2,0].set_ylabel("Delay (ms)")
+            lbar = ax[2,0].barh(np.array([0]), ldy[j])
+            rbar = ax[2,1].barh(np.array([0]), rdy[j])
+            ax[2,0].axvline(rdy[j], c='k', lw=0.3)
+            ax[2,1].axvline(ldy[j], c='k', lw=0.3)
+            ax[2,0].set_xlim((0,5))
+            ax[2,1].set_xlim((0,5))
+            ax[2,0].bar_label(lbar)
+            ax[2,1].bar_label(rbar)
+            ax[2,0].set_xticks([])
+            ax[2,1].set_xticks([])
+            ax[2,0].set_yticks([])
+            ax[2,1].set_yticks([])
+
+
+            plt.tight_layout()
+            plt.subplots_adjust(wspace=0.)
+            plt.subplots_adjust(hspace=0.)
+
+            os.makedirs(f'{data_dir}/temp', exist_ok=True)
+            plt.savefig(data_dir + '/temp/file%02d.png' % j)
+            plt.clf()
+            plt.close("all")
+
+        subprocess.call([
+            'ffmpeg', '-framerate', '20',
+            '-i', f'{data_dir}/temp/file%02d.png',
+            '-r', '30', '-pix_fmt', 'yuv420p',
+            f'{data_dir}/silent_video.mp4'
+        ])
+        subprocess.call([
+            'ffmpeg',
+            '-i', f'{data_dir}/silent_video.mp4',
+            '-i', f'{data_dir}/{fname}.wav',
+            '-c:v', 'copy', '-map', '0:v', '-map', '1:a',
+            '-shortest', '-y',
+            f'{data_dir}/{fname}.mp4'
+        ])
+
+        shutil.rmtree(f"{data_dir}/temp")
 
 if __name__=='__main__':
     parser = get_parser()
