@@ -13,9 +13,7 @@ import sys
 currentdir = os.path.dirname(os.path.realpath(__file__))
 parentdir = os.path.dirname(currentdir)
 sys.path.append(parentdir)
-from utils import unfold, preemphasis
-from utils import magphase, polar, group_delay
-from utils import sinusoidal_encoding
+from utils import unfold
 import torchaudio.transforms as TAT
 
 import scipy.linalg
