@@ -20,6 +20,13 @@ Install third-party dependencies. This project was built and tested on RTX 2080 
 pip install -r requirements.txt
 ```
 
+### Off-the-shelf Rendering
+
+If you just want to render your audio into binaural, simply running `render.py` would definitely be a great choice. Specify the directory path where the mono `.wav` files. You can either specify the position file in `.txt`, OR the code will generate a sample position (that will rotate around you in a circular movement). We also release the [pre-trained NFS model](https://github.com/jin-woo-lee/nfs-binaural/releases/tag/v1.0.0) described in the paper.
+
+```bash
+python render.py --gpu 0 --ckpt path/to/ckpt/file.pt --root_dir path/to/load/dir --save_dir path/to/save/dir
+```
 
 ### Training
 
@@ -31,7 +38,7 @@ python main.py --gpus 0 --train
 
 ### Inference
 
-You can synthesize binaural audio by running `inference.py`. Specify the directory path where the mono `.wav` files and position `.txt` files for each are located. We release the [pre-trained NFS model](https://github.com/jin-woo-lee/nfs-binaural/releases/tag/v1.0.0) described in the paper.
+You can synthesize binaural audio by running `inference.py`. Specify the directory path where the mono `.wav` files and position `.txt` files for each are located.
 
 ```bash
 python inference.py --gpu 0 --ckpt path/to/ckpt/file.pt --root_dir path/to/load/dir --save_dir path/to/save/dir
